@@ -2,6 +2,15 @@
 
 Smile 
 
+
+Go to: https://editor.p5js.org/
+
+Paste in the code
+
+Play 
+
+Code - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
 let pulseTimer = 0;
 
 function setup() {
