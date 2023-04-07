@@ -10,7 +10,6 @@ Paste in the code
 Play 
 
 Code - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-
 let pulseTimer = 0;
 
 function setup() {
