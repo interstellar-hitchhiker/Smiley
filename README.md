@@ -2,10 +2,4 @@
 
 Smile 
 
-Copy the code from here: https://github.com/interstellar-hitchhiker/Smiley-Acid-Face1/blob/main/sketch.js
-
-Go to: https://editor.p5js.org/
-
-Paste code
-
-Play 
+https://interstellar-hitchhiker.github.io/smiley.github.io/
