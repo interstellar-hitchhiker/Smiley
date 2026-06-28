@@ -1,15 +1,1425 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <meta charset="utf-8" />
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smiley Acid DnB — Single File Visual Toy</title>
+  <style>
+    :root {
+      --bg0: #060710;
+      --bg1: #100722;
+      --panel: rgba(13, 16, 31, 0.74);
+      --panel-strong: rgba(23, 25, 46, 0.9);
+      --line: rgba(255, 255, 255, 0.15);
+      --text: #f6f2ff;
+      --muted: #b9b1cf;
+      --hot: #f8ff4d;
+      --pink: #ff46d8;
+      --cyan: #49f4ff;
+      --green: #7dff74;
+      --danger: #ff7474;
+      --shadow: rgba(0, 0, 0, 0.48);
+    }
 
-  </head>
-  <body>
-    <main>
-    </main>
-    <script src="sketch.js"></script>
-  </body>
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(255, 70, 216, 0.20), transparent 28%),
+        radial-gradient(circle at 80% 20%, rgba(73, 244, 255, 0.18), transparent 32%),
+        radial-gradient(circle at 50% 80%, rgba(125, 255, 116, 0.12), transparent 36%),
+        linear-gradient(135deg, var(--bg0), var(--bg1) 55%, #05050b);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .hud {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      width: min(420px, calc(100vw - 32px));
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--panel);
+      box-shadow: 0 24px 70px var(--shadow);
+      backdrop-filter: blur(18px) saturate(1.3);
+      -webkit-backdrop-filter: blur(18px) saturate(1.3);
+      user-select: none;
+    }
+
+    .topline {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 21px;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin: 0;
+      max-width: 34em;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.38;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      padding: 7px 9px;
+      border: 1px solid rgba(248, 255, 77, 0.38);
+      border-radius: 999px;
+      color: #141004;
+      background: linear-gradient(135deg, var(--hot), #ffb743);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      box-shadow: 0 0 26px rgba(248, 255, 77, 0.25);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    button, select, input[type="text"], input[type="url"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--panel-strong);
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      outline: none;
+    }
+
+    button {
+      min-height: 42px;
+      padding: 10px 10px;
+      cursor: pointer;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, filter 140ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); border-color: rgba(73, 244, 255, 0.70); }
+    button:active { transform: translateY(1px) scale(0.99); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .primary {
+      color: #061014;
+      background: linear-gradient(135deg, var(--cyan), #93ffbe);
+      border-color: rgba(255, 255, 255, 0.42);
+      box-shadow: 0 0 28px rgba(73, 244, 255, 0.22);
+    }
+
+    .pink {
+      color: #180315;
+      background: linear-gradient(135deg, #ff46d8, #ff8e4f);
+      border-color: rgba(255, 255, 255, 0.35);
+      box-shadow: 0 0 28px rgba(255, 70, 216, 0.18);
+    }
+
+    .danger {
+      background: linear-gradient(135deg, rgba(124, 27, 44, 0.95), rgba(72, 13, 35, 0.95));
+      border-color: rgba(255, 116, 116, 0.44);
+      color: #ffe7e7;
+    }
+
+    .section {
+      margin-top: 13px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.11);
+    }
+
+    .section-title {
+      margin: 0 0 9px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    label {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    label span:last-child {
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+    }
+
+    input[type="range"] {
+      grid-column: 1 / -1;
+      width: 100%;
+      accent-color: var(--cyan);
+    }
+
+    select, input[type="text"], input[type="url"] {
+      min-height: 38px;
+      padding: 9px 10px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stream-row {
+      display: grid;
+      grid-template-columns: 1fr 112px;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .meter {
+      display: grid;
+      grid-template-columns: 54px 1fr 40px;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .bar {
+      position: relative;
+      height: 9px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    .bar i {
+      display: block;
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--cyan), var(--pink), var(--hot));
+      box-shadow: 0 0 18px rgba(255, 70, 216, 0.35);
+    }
+
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.20);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      min-height: 52px;
+    }
+
+    .status strong { color: var(--text); }
+
+    .mini {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      max-width: min(410px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(13, 16, 31, 0.60);
+      color: var(--muted);
+      box-shadow: 0 24px 70px var(--shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      font-size: 12px;
+      line-height: 1.38;
+      user-select: none;
+    }
+
+    .mini kbd {
+      display: inline-block;
+      min-width: 1.4em;
+      padding: 1px 6px 2px;
+      margin: 0 2px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.10);
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+    }
+
+    .hide-ui .hud,
+    .hide-ui .mini { opacity: 0; pointer-events: none; }
+
+    .reveal-ui {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(12px);
+      z-index: 8;
+      opacity: 0;
+      pointer-events: none;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: rgba(5, 6, 14, 0.58);
+      color: var(--text);
+      box-shadow: 0 18px 46px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .hide-ui .reveal-ui {
+      opacity: 0.72;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .hide-ui .reveal-ui:hover { opacity: 1; }
+
+    @media (max-width: 760px) {
+      .hud {
+        top: 10px;
+        left: 10px;
+        width: calc(100vw - 20px);
+        padding: 12px;
+      }
+      .mini { display: none; }
+      .grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stream-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="scene" aria-label="Animated acid smiley visualiser"></canvas>
+
+  <aside class="hud" aria-label="Smiley visualizer controls">
+    <div class="topline">
+      <div>
+        <h1>Smiley Acid DnB</h1>
+        <p class="subtitle">A single-file face toy: pulsing eyes, wobbling grin, bass aura, built-in DnB, optional live stream, local files, or mic input.</p>
+      </div>
+      <div class="badge">1 file</div>
+    </div>
+
+    <div class="grid">
+      <button id="playDnb" class="primary">Start built-in DnB</button>
+      <button id="stopAudio" class="danger">Stop audio</button>
+    </div>
+
+    <div class="section">
+      <p class="section-title">Live / external audio</p>
+      <div class="stream-row">
+        <input id="streamUrl" type="url" spellcheck="false" value="https://bassdrive.radioca.st/stream" aria-label="Live stream URL" />
+        <button id="playStream" class="pink">Try stream</button>
+      </div>
+      <label style="display:block; margin-top:10px;">
+        <span style="display:block; margin-bottom:6px;">Load local audio file</span>
+        <input id="fileInput" type="file" accept="audio/*" />
+      </label>
+      <div class="grid" style="margin-top:8px;">
+        <button id="micBtn">Use mic</button>
+        <button id="fakeBeatBtn">Visual pulse only</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <p class="section-title">Face controls</p>
+      <div class="grid three">
+        <select id="mood">
+          <option value="acid">Acid grin</option>
+          <option value="happy">Happy idiot</option>
+          <option value="menace">Tiny menace</option>
+          <option value="liquid">Liquid chill</option>
+          <option value="rave">Rave goblin</option>
+        </select>
+        <button id="randomize">Randomize</button>
+        <button id="fullscreen">Fullscreen</button>
+      </div>
+
+      <label><span>Intensity</span><span id="intensityVal">72%</span><input id="intensity" type="range" min="0" max="100" value="72" /></label>
+      <label><span>Audio sensitivity</span><span id="sensitivityVal">86%</span><input id="sensitivity" type="range" min="20" max="170" value="86" /></label>
+      <label><span>BPM / fallback pulse</span><span id="bpmVal">174</span><input id="bpm" type="range" min="80" max="220" value="174" /></label>
+      <label><span>Face size</span><span id="faceVal">100%</span><input id="faceScale" type="range" min="70" max="135" value="100" /></label>
+    </div>
+
+    <div class="section">
+      <p class="section-title">Output</p>
+      <div class="grid">
+        <button id="savePng">Save PNG</button>
+        <button id="hideUi">Hide UI</button>
+      </div>
+      <div class="meter"><span>Bass</span><div class="bar"><i id="bassBar"></i></div><span id="bassNum">0</span></div>
+      <div class="meter"><span>Mid</span><div class="bar"><i id="midBar"></i></div><span id="midNum">0</span></div>
+      <div class="meter"><span>Air</span><div class="bar"><i id="airBar"></i></div><span id="airNum">0</span></div>
+      <div class="status" id="status"><strong>Ready.</strong><br>Press Start built-in DnB for guaranteed audio-reactive motion. Streams depend on browser/network permissions.</div>
+    </div>
+  </aside>
+
+  <div class="mini">
+    Keys: <kbd>Space</kbd> start/stop DnB, <kbd>R</kbd> randomize, <kbd>H</kbd> hide UI, <kbd>F</kbd> fullscreen, <kbd>S</kbd> save PNG. Move the mouse near the face to annoy it.
+  </div>
+
+  <button id="revealUi" class="reveal-ui" type="button">Show controls · move / tap / Esc</button>
+
+  <audio id="radio" crossorigin="anonymous" preload="none"></audio>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const canvas = document.getElementById('scene');
+      const ctx = canvas.getContext('2d', { alpha: false });
+      const audioEl = document.getElementById('radio');
+      const streamEl = new Audio();
+      streamEl.preload = 'none';
+      streamEl.volume = 0.95;
+
+      const ui = {
+        playDnb: document.getElementById('playDnb'),
+        stopAudio: document.getElementById('stopAudio'),
+        playStream: document.getElementById('playStream'),
+        streamUrl: document.getElementById('streamUrl'),
+        fileInput: document.getElementById('fileInput'),
+        micBtn: document.getElementById('micBtn'),
+        fakeBeatBtn: document.getElementById('fakeBeatBtn'),
+        mood: document.getElementById('mood'),
+        randomize: document.getElementById('randomize'),
+        fullscreen: document.getElementById('fullscreen'),
+        intensity: document.getElementById('intensity'),
+        sensitivity: document.getElementById('sensitivity'),
+        bpm: document.getElementById('bpm'),
+        faceScale: document.getElementById('faceScale'),
+        intensityVal: document.getElementById('intensityVal'),
+        sensitivityVal: document.getElementById('sensitivityVal'),
+        bpmVal: document.getElementById('bpmVal'),
+        faceVal: document.getElementById('faceVal'),
+        savePng: document.getElementById('savePng'),
+        hideUi: document.getElementById('hideUi'),
+        revealUi: document.getElementById('revealUi'),
+        status: document.getElementById('status'),
+        bassBar: document.getElementById('bassBar'),
+        midBar: document.getElementById('midBar'),
+        airBar: document.getElementById('airBar'),
+        bassNum: document.getElementById('bassNum'),
+        midNum: document.getElementById('midNum'),
+        airNum: document.getElementById('airNum')
+      };
+
+      const state = {
+        w: 0,
+        h: 0,
+        dpr: 1,
+        t: 0,
+        last: performance.now(),
+        mode: 'silent',
+        mood: 'acid',
+        intensity: 0.72,
+        sensitivity: 0.86,
+        bpm: 174,
+        faceScale: 1,
+        hue: 64,
+        targetHue: 64,
+        bass: 0,
+        mid: 0,
+        air: 0,
+        loud: 0,
+        smoothBass: 0,
+        smoothMid: 0,
+        smoothAir: 0,
+        beatPulse: 0,
+        beatHold: 0,
+        loudAvg: 0.02,
+        faceTilt: 0,
+        mouseX: 0,
+        mouseY: 0,
+        mouseActive: false,
+        uiHidden: false,
+        fallbackPulse: true,
+        streamMayBeSilent: false,
+        streamCheckAt: 0,
+        particles: [],
+        blobs: [],
+        stars: [],
+        ripples: []
+      };
+
+      let audioCtx = null;
+      let analyser = null;
+      let master = null;
+      let dataArray = null;
+      let mediaSourceNode = null;
+      let micSourceNode = null;
+      let schedulerId = null;
+      let nextNoteTime = 0;
+      let stepIndex = 0;
+      let noiseBuffer = null;
+
+      const moods = {
+        acid:   { hue: 64,  eye: 1.00, grin: 1.00, wobble: 1.00, label: 'Acid grin' },
+        happy:  { hue: 52,  eye: 0.80, grin: 0.82, wobble: 0.60, label: 'Happy idiot' },
+        menace: { hue: 18,  eye: 1.22, grin: 1.35, wobble: 0.85, label: 'Tiny menace' },
+        liquid: { hue: 170, eye: 0.68, grin: 0.70, wobble: 0.55, label: 'Liquid chill' },
+        rave:   { hue: 300, eye: 1.30, grin: 1.05, wobble: 1.45, label: 'Rave goblin' }
+      };
+
+      function resize() {
+        state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+        state.w = Math.floor(window.innerWidth);
+        state.h = Math.floor(window.innerHeight);
+        canvas.width = Math.floor(state.w * state.dpr);
+        canvas.height = Math.floor(state.h * state.dpr);
+        canvas.style.width = state.w + 'px';
+        canvas.style.height = state.h + 'px';
+        ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+        seedScene();
+      }
+
+      function seedScene() {
+        const count = Math.max(70, Math.floor((state.w * state.h) / 18000));
+        state.blobs = Array.from({ length: 8 }, (_, i) => ({
+          x: Math.random() * state.w,
+          y: Math.random() * state.h,
+          r: 120 + Math.random() * 260,
+          hue: (i * 47 + Math.random() * 60) % 360,
+          speed: 0.08 + Math.random() * 0.26,
+          phase: Math.random() * Math.PI * 2
+        }));
+        state.stars = Array.from({ length: count }, () => ({
+          x: Math.random() * state.w,
+          y: Math.random() * state.h,
+          z: 0.25 + Math.random() * 1.8,
+          a: 0.10 + Math.random() * 0.48,
+          hue: Math.random() * 360
+        }));
+      }
+
+      function status(title, detail = '') {
+        ui.status.innerHTML = `<strong>${escapeHtml(title)}</strong>${detail ? '<br>' + escapeHtml(detail) : ''}`;
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+      }
+
+      function clamp(v, a = 0, b = 1) { return Math.max(a, Math.min(b, v)); }
+      function lerp(a, b, t) { return a + (b - a) * t; }
+      function smooth(v, target, speed) { return v + (target - v) * clamp(speed); }
+      function rand(a, b) { return a + Math.random() * (b - a); }
+      function hsl(h, s, l, a = 1) { return `hsla(${((h % 360) + 360) % 360}, ${s}%, ${l}%, ${a})`; }
+
+      function updateLabels() {
+        state.intensity = Number(ui.intensity.value) / 100;
+        state.sensitivity = Number(ui.sensitivity.value) / 100;
+        state.bpm = Number(ui.bpm.value);
+        state.faceScale = Number(ui.faceScale.value) / 100;
+        state.mood = ui.mood.value;
+        state.targetHue = moods[state.mood].hue;
+        ui.intensityVal.textContent = Math.round(state.intensity * 100) + '%';
+        ui.sensitivityVal.textContent = Math.round(state.sensitivity * 100) + '%';
+        ui.bpmVal.textContent = String(state.bpm);
+        ui.faceVal.textContent = Math.round(state.faceScale * 100) + '%';
+        saveSettings();
+      }
+
+      function saveSettings() {
+        const payload = {
+          mood: ui.mood.value,
+          intensity: ui.intensity.value,
+          sensitivity: ui.sensitivity.value,
+          bpm: ui.bpm.value,
+          faceScale: ui.faceScale.value,
+          streamUrl: ui.streamUrl.value
+        };
+        try { localStorage.setItem('smiley-acid-dnb-settings', JSON.stringify(payload)); } catch (_) {}
+      }
+
+      function loadSettings() {
+        try {
+          const payload = JSON.parse(localStorage.getItem('smiley-acid-dnb-settings') || '{}');
+          for (const [key, value] of Object.entries(payload)) {
+            if (ui[key] && value !== undefined) ui[key].value = value;
+          }
+        } catch (_) {}
+        updateLabels();
+      }
+
+      async function ensureAudio() {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 1024;
+          analyser.smoothingTimeConstant = 0.72;
+          dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+          const compressor = audioCtx.createDynamicsCompressor();
+          compressor.threshold.value = -18;
+          compressor.knee.value = 22;
+          compressor.ratio.value = 4;
+          compressor.attack.value = 0.004;
+          compressor.release.value = 0.18;
+
+          master = audioCtx.createGain();
+          master.gain.value = 0.78;
+          master.connect(compressor);
+          compressor.connect(analyser);
+          analyser.connect(audioCtx.destination);
+          noiseBuffer = makeNoiseBuffer(2);
+        }
+        if (audioCtx.state !== 'running') await audioCtx.resume();
+      }
+
+      function makeNoiseBuffer(seconds) {
+        const len = Math.floor(audioCtx.sampleRate * seconds);
+        const buffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        let last = 0;
+        for (let i = 0; i < len; i++) {
+          const white = Math.random() * 2 - 1;
+          last = last * 0.86 + white * 0.14;
+          data[i] = white * 0.65 + last * 0.35;
+        }
+        return buffer;
+      }
+
+      function disconnectExternalSources() {
+        if (micSourceNode) {
+          try { micSourceNode.disconnect(); } catch (_) {}
+          micSourceNode = null;
+        }
+        if (mediaSourceNode) {
+          try { mediaSourceNode.disconnect(); } catch (_) {}
+        }
+      }
+
+      async function startBuiltInDnb() {
+        await ensureAudio();
+        stopScheduler();
+        disconnectExternalSources();
+        streamEl.pause();
+        audioEl.pause();
+        state.mode = 'built-in dnb';
+        state.fallbackPulse = false;
+        state.streamMayBeSilent = false;
+        nextNoteTime = audioCtx.currentTime + 0.08;
+        stepIndex = 0;
+        schedulerId = setInterval(scheduler, 25);
+        status('Built-in DnB running.', 'The face is now reacting to generated kick, snare, hats, and bass. Change BPM live.');
+      }
+
+      function stopScheduler() {
+        if (schedulerId) clearInterval(schedulerId);
+        schedulerId = null;
+      }
+
+      function scheduler() {
+        if (!audioCtx || !schedulerId) return;
+        const lookahead = 0.13;
+        while (nextNoteTime < audioCtx.currentTime + lookahead) {
+          scheduleStep(stepIndex, nextNoteTime);
+          const secondsPerBeat = 60 / state.bpm;
+          nextNoteTime += secondsPerBeat / 4;
+          stepIndex = (stepIndex + 1) % 32;
+        }
+      }
+
+      function scheduleStep(step, t) {
+        const s = step % 16;
+        const barStep = step % 32;
+        const swing = (s % 2) ? 0.012 : 0;
+        const tt = t + swing;
+        const hard = state.mood === 'menace' || state.mood === 'rave';
+
+        if ([0, 6, 10, 14].includes(s) || (hard && [3, 12].includes(s))) kick(tt, s === 0 ? 1.05 : 0.72);
+        if (s === 4 || s === 12) snare(tt, 0.92);
+        if ((hard && s === 15) || (!hard && s === 11 && barStep > 15)) ghostSnare(tt + 0.018, 0.32);
+        if (s % 2 === 0 || (state.mood === 'rave' && s % 2 === 1)) hat(tt, s % 4 === 0 ? 0.42 : 0.25);
+        if ([2, 7, 9, 13].includes(s)) hat(tt + 0.025, 0.17);
+        if ([0, 3, 6, 10, 14].includes(s)) bass(tt, step);
+      }
+
+      function envGain(start, peak, end, t, a, r) {
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(start, t);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak), t + a);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.0001, end), t + r);
+        return g;
+      }
+
+      function kick(t, amp = 1) {
+        const osc = audioCtx.createOscillator();
+        const click = audioCtx.createOscillator();
+        const g = envGain(0.0001, amp * 1.05, 0.0001, t, 0.006, 0.22);
+        const cg = envGain(0.0001, amp * 0.19, 0.0001, t, 0.002, 0.025);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(145, t);
+        osc.frequency.exponentialRampToValueAtTime(44, t + 0.18);
+        click.type = 'triangle';
+        click.frequency.setValueAtTime(920, t);
+        click.frequency.exponentialRampToValueAtTime(180, t + 0.025);
+        osc.connect(g).connect(master);
+        click.connect(cg).connect(master);
+        osc.start(t); click.start(t);
+        osc.stop(t + 0.26); click.stop(t + 0.04);
+        thumpRipple(1.0);
+      }
+
+      function snare(t, amp = 1) {
+        const src = audioCtx.createBufferSource();
+        src.buffer = noiseBuffer;
+        const hp = audioCtx.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 740;
+        const bp = audioCtx.createBiquadFilter();
+        bp.type = 'bandpass'; bp.frequency.value = 1850; bp.Q.value = 0.75;
+        const g = envGain(0.0001, amp * 0.56, 0.0001, t, 0.004, 0.16);
+
+        const body = audioCtx.createOscillator();
+        const bg = envGain(0.0001, amp * 0.16, 0.0001, t, 0.006, 0.11);
+        body.type = 'triangle'; body.frequency.value = 186;
+
+        src.connect(hp).connect(bp).connect(g).connect(master);
+        body.connect(bg).connect(master);
+        src.start(t); body.start(t);
+        src.stop(t + 0.20); body.stop(t + 0.13);
+        state.beatPulse = Math.max(state.beatPulse, 0.74);
+      }
+
+      function ghostSnare(t, amp = 0.3) { snare(t, amp); }
+
+      function hat(t, amp = 0.26) {
+        const src = audioCtx.createBufferSource();
+        src.buffer = noiseBuffer;
+        const hp = audioCtx.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 6200;
+        const g = envGain(0.0001, amp * 0.30, 0.0001, t, 0.002, 0.055);
+        src.connect(hp).connect(g).connect(master);
+        src.start(t);
+        src.stop(t + 0.07);
+      }
+
+      function bass(t, step) {
+        const notes = [36, null, 36, 43, 39, null, 31, 34, 36, null, 43, 41, 39, null, 34, 31, 36, null, 36, 43, 39, 41, 43, null, 31, 31, 34, null, 36, 39, 43, null];
+        const midi = notes[step % notes.length];
+        if (midi === null) return;
+        const freq = 440 * Math.pow(2, (midi - 69) / 12);
+        const osc = audioCtx.createOscillator();
+        const sub = audioCtx.createOscillator();
+        const filter = audioCtx.createBiquadFilter();
+        const g = envGain(0.0001, 0.36, 0.0001, t, 0.012, 0.20);
+        osc.type = state.mood === 'liquid' ? 'triangle' : 'sawtooth';
+        sub.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+        sub.frequency.setValueAtTime(freq / 2, t);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(230 + state.intensity * 800, t);
+        filter.frequency.exponentialRampToValueAtTime(120, t + 0.20);
+        filter.Q.value = 4 + state.intensity * 7;
+        osc.connect(filter);
+        sub.connect(filter);
+        filter.connect(g).connect(master);
+        osc.start(t); sub.start(t);
+        osc.stop(t + 0.22); sub.stop(t + 0.22);
+      }
+
+      function thumpRipple(power) {
+        const max = Math.min(state.w, state.h) * 0.34;
+        state.ripples.push({ age: 0, max, power, hue: state.hue + rand(-25, 25) });
+        if (state.ripples.length > 12) state.ripples.shift();
+      }
+
+      async function playStream() {
+        stopScheduler();
+        disconnectExternalSources();
+        audioEl.pause();
+
+        const url = ui.streamUrl.value.trim();
+        if (!url) {
+          status('No stream URL.', 'Paste a direct MP3/AAC/stream URL, or use the built-in DnB engine.');
+          return;
+        }
+
+        state.mode = 'live stream';
+        // Important: most public radio streams can be heard by the browser, but cannot be
+        // inspected by JavaScript's Web Audio analyser unless the station sends CORS headers.
+        // So stream mode plays the real station normally and drives the face with a strong
+        // DnB rhythm fallback instead of leaving it frozen. Built-in/local/mic modes remain
+        // genuinely audio-reactive.
+        state.fallbackPulse = true;
+        state.streamMayBeSilent = false;
+        state.streamCheckAt = 0;
+        state.beatPulse = Math.max(state.beatPulse, 0.85);
+        thumpRipple(1);
+        burstParticles(18, 0.9);
+
+        try {
+          streamEl.pause();
+          streamEl.removeAttribute('src');
+          streamEl.load();
+          streamEl.src = url;
+          await streamEl.play();
+          status('Live stream playing; visual driver active.', 'The stream is playing normally. Because many internet radio servers block analyser access, the face uses the BPM rhythm driver instead of freezing. Use built-in DnB, local file, or mic for true audio-reactive motion.');
+        } catch (err) {
+          state.fallbackPulse = true;
+          status('Stream did not start.', 'Use built-in DnB, load a local file, or paste another direct MP3/AAC stream URL. Browser said: ' + err.message);
+        }
+        saveSettings();
+      }
+
+      function connectMediaElement() {
+        if (!mediaSourceNode) mediaSourceNode = audioCtx.createMediaElementSource(audioEl);
+        try { mediaSourceNode.disconnect(); } catch (_) {}
+        mediaSourceNode.connect(master);
+      }
+
+      async function loadFile(file) {
+        if (!file) return;
+        await ensureAudio();
+        stopScheduler();
+        streamEl.pause();
+        disconnectExternalSources();
+        if (audioEl.src && audioEl.src.startsWith('blob:')) URL.revokeObjectURL(audioEl.src);
+        audioEl.src = URL.createObjectURL(file);
+        audioEl.crossOrigin = '';
+        connectMediaElement();
+        state.mode = 'local file';
+        state.fallbackPulse = false;
+        state.streamMayBeSilent = false;
+        await audioEl.play();
+        status('Local audio loaded.', file.name + ' is driving the face through the Web Audio analyser.');
+      }
+
+      async function useMic() {
+        await ensureAudio();
+        stopScheduler();
+        streamEl.pause();
+        audioEl.pause();
+        disconnectExternalSources();
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          micSourceNode = audioCtx.createMediaStreamSource(stream);
+          micSourceNode.connect(master);
+          state.mode = 'microphone';
+          state.fallbackPulse = false;
+          state.streamMayBeSilent = false;
+          status('Microphone mode.', 'Speak, clap, or play music nearby. Headphones recommended.');
+        } catch (err) {
+          state.fallbackPulse = true;
+          status('Mic blocked or unavailable.', err.message);
+        }
+      }
+
+      function visualPulseOnly() {
+        stopAllAudio(false);
+        state.mode = 'visual pulse';
+        state.fallbackPulse = true;
+        status('Visual pulse only.', 'No audio: the face follows the BPM slider and behaves like a silent rave screensaver.');
+      }
+
+      function stopAllAudio(setSilent = true) {
+        stopScheduler();
+        streamEl.pause();
+        streamEl.removeAttribute('src');
+        streamEl.load();
+        if (audioEl) { audioEl.pause(); audioEl.removeAttribute('src'); audioEl.load(); }
+        disconnectExternalSources();
+        if (setSilent) {
+          state.mode = 'silent';
+          state.fallbackPulse = true;
+          status('Audio stopped.', 'The face is still alive, but it is now using a gentle fallback pulse.');
+        }
+      }
+
+      function analyseAudio(dt) {
+        let bass = 0, mid = 0, air = 0, loud = 0;
+        let haveUsefulAudio = false;
+
+        if (analyser && dataArray && !state.fallbackPulse) {
+          analyser.getByteFrequencyData(dataArray);
+          const n = dataArray.length;
+          const bEnd = Math.max(6, Math.floor(n * 0.09));
+          const mEnd = Math.floor(n * 0.34);
+          bass = avg(dataArray, 1, bEnd) / 255;
+          mid = avg(dataArray, bEnd, mEnd) / 255;
+          air = avg(dataArray, mEnd, n) / 255;
+          loud = avg(dataArray, 1, n) / 255;
+          const boost = 0.75 + state.sensitivity * 1.35;
+          bass = clamp(Math.pow(bass * boost, 0.82));
+          mid = clamp(Math.pow(mid * boost, 0.92));
+          air = clamp(Math.pow(air * boost, 0.78));
+          loud = clamp(loud * boost);
+          haveUsefulAudio = loud > 0.012 || bass > 0.018 || air > 0.018;
+        }
+
+        if (!haveUsefulAudio) {
+          const beat = fallbackBeat();
+          const wob = 0.5 + 0.5 * Math.sin(state.t * 2.1);
+          bass = Math.max(bass, beat * 0.92);
+          mid = Math.max(mid, Math.pow(beat, 0.65) * 0.46 + wob * 0.12);
+          air = Math.max(air, (0.18 + 0.52 * Math.sin(state.t * 5.7) ** 2) * state.intensity);
+          loud = Math.max(loud, bass * 0.64 + mid * 0.22 + air * 0.10);
+          if (state.streamMayBeSilent && state.mode === 'live stream' && state.t > state.streamCheckAt) {
+            state.fallbackPulse = true;
+            status('Stream playing or attempted; visual fallback active.', 'Browser stream analysis often needs CORS permission. Built-in DnB and local files give true audio-reactive motion.');
+          }
+        }
+
+        state.loudAvg = smooth(state.loudAvg, loud, 0.012);
+        if (loud > state.loudAvg * 1.48 + 0.055 && state.beatHold <= 0) {
+          state.beatPulse = 1;
+          state.beatHold = 0.16;
+          thumpRipple(clamp(loud * 1.4));
+          burstParticles(8 + Math.floor(state.intensity * 12), loud);
+        }
+        state.beatHold = Math.max(0, state.beatHold - dt);
+        state.beatPulse *= Math.pow(0.05, dt);
+
+        state.bass = bass; state.mid = mid; state.air = air; state.loud = loud;
+        state.smoothBass = smooth(state.smoothBass, bass, 0.19);
+        state.smoothMid = smooth(state.smoothMid, mid, 0.13);
+        state.smoothAir = smooth(state.smoothAir, air, 0.15);
+      }
+
+      function fallbackBeat() {
+        const secPerBeat = 60 / state.bpm;
+        const phase = (state.t % secPerBeat) / secPerBeat;
+        const step = Math.floor((state.t / (secPerBeat / 4)) % 16);
+        const local = ((state.t % (secPerBeat / 4)) / (secPerBeat / 4));
+        const kick = Math.exp(-phase * 13.5);
+        const snarePhase = ((phase + 0.5) % 1);
+        const snare = Math.exp(-snarePhase * 15) * 0.52;
+        const ghostSteps = [2, 5, 7, 10, 13, 15].includes(step) ? Math.exp(-local * 11) * 0.20 : 0;
+        const hats = (0.08 + 0.09 * Math.sin(state.t * Math.PI * state.bpm / 7) ** 2);
+        const streamLift = state.mode === 'live stream' ? 0.18 + 0.10 * Math.sin(state.t * 2.7) ** 2 : 0;
+        return clamp(kick + snare + ghostSteps + hats + streamLift);
+      }
+
+      function avg(arr, start, end) {
+        let sum = 0;
+        const a = Math.max(0, start | 0);
+        const b = Math.min(arr.length, end | 0);
+        for (let i = a; i < b; i++) sum += arr[i];
+        return b > a ? sum / (b - a) : 0;
+      }
+
+      function burstParticles(count, power) {
+        const cx = state.w / 2;
+        const cy = state.h / 2;
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = rand(90, 420) * (0.45 + power);
+          state.particles.push({
+            x: cx + Math.cos(angle) * rand(40, 170),
+            y: cy + Math.sin(angle) * rand(40, 170),
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: rand(0.55, 1.25),
+            age: 0,
+            r: rand(1.5, 5.8),
+            hue: state.hue + rand(-55, 85)
+          });
+        }
+        if (state.particles.length > 260) state.particles.splice(0, state.particles.length - 260);
+      }
+
+      function updateParticles(dt) {
+        for (const p of state.particles) {
+          p.age += dt;
+          p.vx *= Math.pow(0.10, dt);
+          p.vy *= Math.pow(0.10, dt);
+          p.vy += 40 * dt;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+        }
+        state.particles = state.particles.filter(p => p.age < p.life);
+        for (const r of state.ripples) r.age += dt;
+        state.ripples = state.ripples.filter(r => r.age < 1.2);
+      }
+
+      function draw() {
+        const now = performance.now();
+        const dt = Math.min(0.05, (now - state.last) / 1000);
+        state.last = now;
+        state.t += dt;
+        state.hue = lerpHue(state.hue, state.targetHue + Math.sin(state.t * 0.15) * 20, 0.018);
+
+        analyseAudio(dt);
+        updateParticles(dt);
+        drawBackground(dt);
+        drawAura();
+        drawFace();
+        drawForeground();
+        updateMeters();
+        requestAnimationFrame(draw);
+      }
+
+      function lerpHue(a, b, t) {
+        let d = ((b - a + 540) % 360) - 180;
+        return (a + d * t + 360) % 360;
+      }
+
+      function drawBackground(dt) {
+        const w = state.w, h = state.h;
+        const bg = ctx.createLinearGradient(0, 0, w, h);
+        bg.addColorStop(0, hsl(state.hue + 220, 70, 5, 1));
+        bg.addColorStop(0.46, hsl(state.hue + 275, 80, 8, 1));
+        bg.addColorStop(1, hsl(state.hue + 180, 75, 4, 1));
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (const b of state.blobs) {
+          const x = b.x + Math.cos(state.t * b.speed + b.phase) * 80;
+          const y = b.y + Math.sin(state.t * b.speed * 0.8 + b.phase) * 60;
+          const r = b.r * (0.88 + state.smoothBass * 0.32);
+          const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+          g.addColorStop(0, hsl(b.hue + state.hue * 0.12, 95, 58, 0.16 + state.smoothMid * 0.12));
+          g.addColorStop(0.55, hsl(b.hue + 40, 95, 34, 0.06));
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalAlpha = 0.16 + state.smoothAir * 0.20;
+        ctx.strokeStyle = hsl(state.hue + 120, 100, 70, 0.30);
+        ctx.lineWidth = 1;
+        const gap = 44;
+        const offset = (state.t * (18 + state.smoothAir * 90)) % gap;
+        for (let x = -state.h; x < state.w + state.h; x += gap) {
+          ctx.beginPath();
+          ctx.moveTo(x + offset, 0);
+          ctx.lineTo(x + state.h + offset, state.h);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        for (const s of state.stars) {
+          s.y += dt * (12 + state.smoothAir * 120) * s.z;
+          s.x += Math.sin(state.t * 0.7 + s.z * 3) * dt * 8;
+          if (s.y > h + 10) { s.y = -10; s.x = Math.random() * w; }
+          ctx.fillStyle = hsl(s.hue + state.hue, 90, 70, s.a * (0.55 + state.smoothAir));
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.z * (0.8 + state.smoothAir * 1.8), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function drawAura() {
+        const cx = state.w / 2;
+        const cy = state.h / 2;
+        const base = Math.min(state.w, state.h) * 0.245 * state.faceScale;
+        const mood = moods[state.mood];
+        const pulse = state.smoothBass * 0.95 + state.beatPulse * 0.35;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 9; i++) {
+          const r = base * (1.02 + i * 0.16 + pulse * 0.18) + Math.sin(state.t * (1.1 + i * 0.07) + i) * 6;
+          ctx.lineWidth = 4 + i * 1.4;
+          ctx.strokeStyle = hsl(state.hue + i * 27 + state.t * 10, 96, 60, (0.17 - i * 0.013) * state.intensity);
+          ctx.beginPath();
+          const wob = 0.025 * mood.wobble * state.intensity;
+          for (let a = 0; a <= Math.PI * 2 + 0.05; a += 0.045) {
+            const rr = r * (1 + Math.sin(a * 7 + state.t * 2.4 + i) * wob + Math.sin(a * 3 - state.t * 1.8) * wob);
+            const x = Math.cos(a) * rr;
+            const y = Math.sin(a) * rr;
+            if (a === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+          ctx.stroke();
+        }
+
+        for (const ripple of state.ripples) {
+          const p = ripple.age / 1.2;
+          ctx.lineWidth = 5 * (1 - p) + 1;
+          ctx.strokeStyle = hsl(ripple.hue, 98, 65, (1 - p) * 0.22 * ripple.power);
+          ctx.beginPath();
+          ctx.arc(0, 0, base + ripple.max * p, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawFace() {
+        const w = state.w, h = state.h;
+        const cx = w / 2;
+        const cy = h / 2;
+        const mood = moods[state.mood];
+        const baseR = Math.min(w, h) * 0.225 * state.faceScale;
+        const r = baseR * (1 + state.smoothBass * 0.07 + state.beatPulse * 0.045);
+        const annoy = mouseAnnoy(cx, cy, r);
+        const bob = Math.sin(state.t * 2.2) * 3 + state.smoothBass * 18;
+        state.faceTilt = smooth(state.faceTilt, Math.sin(state.t * 1.35) * 0.045 * mood.wobble + annoy.dx * 0.07, 0.05);
+
+        ctx.save();
+        ctx.translate(cx + annoy.dx * 12, cy + bob + annoy.dy * 10);
+        ctx.rotate(state.faceTilt);
+        ctx.scale(1 + state.smoothBass * 0.018, 1 - state.smoothBass * 0.010);
+
+        const shadow = ctx.createRadialGradient(0, r * 0.16, r * 0.1, 0, r * 0.2, r * 1.25);
+        shadow.addColorStop(0, 'rgba(0,0,0,0)');
+        shadow.addColorStop(0.7, 'rgba(0,0,0,0.22)');
+        shadow.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = shadow;
+        ctx.beginPath(); ctx.ellipse(0, r * 0.18, r * 1.15, r * 1.12, 0, 0, Math.PI * 2); ctx.fill();
+
+        const grad = ctx.createRadialGradient(-r * 0.34, -r * 0.38, r * 0.05, 0, 0, r * 1.1);
+        grad.addColorStop(0, hsl(state.hue + 20, 100, 76, 1));
+        grad.addColorStop(0.48, hsl(state.hue, 100, 52, 1));
+        grad.addColorStop(1, hsl(state.hue - 44, 88, 39, 1));
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        blobCircle(0, 0, r, 74, 0.018 + state.intensity * 0.018 * mood.wobble);
+        ctx.fill();
+        ctx.lineWidth = Math.max(7, r * 0.052);
+        ctx.strokeStyle = '#050407';
+        ctx.stroke();
+
+        drawFaceSheen(r);
+        drawEyes(r, mood, annoy);
+        drawMouth(r, mood);
+        drawCheeks(r);
+        ctx.restore();
+      }
+
+      function mouseAnnoy(cx, cy, r) {
+        if (!state.mouseActive) return { dx: 0, dy: 0, near: 0 };
+        const dx = (state.mouseX - cx) / r;
+        const dy = (state.mouseY - cy) / r;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        const near = clamp(1 - d / 1.6);
+        return { dx: clamp(dx, -1, 1) * near, dy: clamp(dy, -1, 1) * near, near };
+      }
+
+      function blobCircle(x, y, r, steps, wobble) {
+        ctx.beginPath();
+        for (let i = 0; i <= steps; i++) {
+          const a = (i / steps) * Math.PI * 2;
+          const rr = r * (1 + Math.sin(a * 5 + state.t * 1.7) * wobble + Math.sin(a * 9 - state.t * 2.2) * wobble * 0.55);
+          const px = x + Math.cos(a) * rr;
+          const py = y + Math.sin(a) * rr;
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+      }
+
+      function drawFaceSheen(r) {
+        ctx.save();
+        ctx.globalAlpha = 0.28 + state.smoothAir * 0.18;
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.ellipse(-r * 0.30, -r * 0.38, r * 0.22, r * 0.105, -0.55, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.08;
+        ctx.beginPath();
+        ctx.ellipse(r * 0.18, r * 0.12, r * 0.55, r * 0.34, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawEyes(r, mood, annoy) {
+        const eyeY = -r * 0.23;
+        const eyeX = r * 0.36;
+        const eyeW = r * (0.29 + state.smoothMid * 0.035) * mood.eye;
+        const eyeH = r * (0.42 + state.smoothBass * 0.09) * mood.eye;
+        const blink = Math.pow(Math.max(0, Math.sin(state.t * 0.55 + 2.5)), 48) * 0.85;
+        const pupilPulse = 1 + state.smoothBass * 0.55 + state.beatPulse * 0.35;
+        const lookX = clamp(annoy.dx * 0.12 + Math.sin(state.t * 0.8) * 0.035, -0.15, 0.15);
+        const lookY = clamp(annoy.dy * 0.08 + Math.sin(state.t * 1.1) * 0.020, -0.10, 0.10);
+
+        for (const side of [-1, 1]) {
+          ctx.save();
+          ctx.translate(side * eyeX, eyeY + Math.sin(state.t * 2.0 + side) * r * 0.01);
+          ctx.rotate(side * 0.08 + Math.sin(state.t * 1.7) * 0.025);
+          ctx.fillStyle = '#050407';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, eyeW, eyeH * (1 - blink), 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          const irisR = r * (0.075 + state.smoothAir * 0.05) * pupilPulse;
+          const ix = side * eyeW * lookX;
+          const iy = eyeH * lookY;
+          const ig = ctx.createRadialGradient(ix - irisR * 0.3, iy - irisR * 0.3, 0, ix, iy, irisR * 1.6);
+          ig.addColorStop(0, 'white');
+          ig.addColorStop(0.32, hsl(state.hue + 140 + side * 30, 95, 70, 1));
+          ig.addColorStop(0.68, hsl(state.hue + 220, 90, 45, 1));
+          ig.addColorStop(1, '#050407');
+          ctx.fillStyle = ig;
+          ctx.beginPath();
+          ctx.arc(ix, iy, irisR, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.92)';
+          ctx.beginPath();
+          ctx.arc(ix - irisR * 0.32, iy - irisR * 0.36, irisR * 0.28, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+          ctx.lineWidth = r * 0.012;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, eyeW * 0.78, eyeH * 0.80 * (1 - blink), 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#050407';
+        ctx.lineWidth = r * 0.045;
+        const browTilt = (state.mood === 'menace' ? 0.14 : -0.04) + state.smoothBass * 0.04;
+        for (const side of [-1, 1]) {
+          ctx.beginPath();
+          ctx.moveTo(side * r * 0.20, -r * (0.58 + side * browTilt));
+          ctx.quadraticCurveTo(side * r * 0.36, -r * (0.66 - side * browTilt), side * r * 0.55, -r * (0.57 - side * browTilt));
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawMouth(r, mood) {
+        const smile = r * (0.36 + mood.grin * 0.05 + state.smoothBass * 0.03);
+        const y = r * (0.30 + state.smoothMid * 0.04);
+        const open = r * (0.12 + state.smoothBass * 0.28 + state.beatPulse * 0.08) * mood.grin;
+        const left = -smile;
+        const right = smile;
+        const wobble = Math.sin(state.t * 7.4) * r * 0.016 * state.intensity * mood.wobble;
+
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.fillStyle = '#0b0208';
+        ctx.strokeStyle = '#050407';
+        ctx.lineWidth = r * 0.055;
+
+        ctx.beginPath();
+        ctx.moveTo(left, y - open * 0.16 + wobble);
+        ctx.quadraticCurveTo(0, y + open * 1.55, right, y - open * 0.10 - wobble);
+        ctx.quadraticCurveTo(0, y + open * 0.72, left, y - open * 0.16 + wobble);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        if (open > r * 0.17) {
+          ctx.fillStyle = hsl(345, 92, 58, 0.80);
+          ctx.beginPath();
+          ctx.ellipse(0, y + open * 0.72, smile * 0.42, open * 0.22, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.20)';
+        ctx.lineWidth = r * 0.012;
+        ctx.beginPath();
+        ctx.moveTo(left * 0.63, y + open * 0.28);
+        ctx.quadraticCurveTo(0, y + open * 0.74, right * 0.63, y + open * 0.28);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawCheeks(r) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.fillStyle = hsl(state.hue - 70, 90, 52, 0.18 + state.smoothMid * 0.14);
+        for (const side of [-1, 1]) {
+          ctx.beginPath();
+          ctx.ellipse(side * r * 0.52, r * 0.12, r * 0.13, r * 0.07, side * 0.15, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function drawForeground() {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (const p of state.particles) {
+          const k = 1 - p.age / p.life;
+          ctx.fillStyle = hsl(p.hue, 100, 65, k * 0.85);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r * (0.45 + k), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        ctx.fillStyle = `rgba(255,255,255,${0.025 + state.smoothAir * 0.035})`;
+        for (let i = 0; i < 28; i++) {
+          const y = (i * 37 + state.t * (18 + state.smoothAir * 90)) % state.h;
+          ctx.fillRect(0, y, state.w, 1);
+        }
+        ctx.restore();
+
+        const vignette = ctx.createRadialGradient(state.w / 2, state.h / 2, Math.min(state.w, state.h) * 0.15, state.w / 2, state.h / 2, Math.max(state.w, state.h) * 0.72);
+        vignette.addColorStop(0, 'rgba(0,0,0,0)');
+        vignette.addColorStop(0.75, 'rgba(0,0,0,0.18)');
+        vignette.addColorStop(1, 'rgba(0,0,0,0.70)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, state.w, state.h);
+      }
+
+      function updateMeters() {
+        const values = [state.smoothBass, state.smoothMid, state.smoothAir];
+        const bars = [ui.bassBar, ui.midBar, ui.airBar];
+        const nums = [ui.bassNum, ui.midNum, ui.airNum];
+        for (let i = 0; i < 3; i++) {
+          const pct = Math.round(clamp(values[i]) * 100);
+          bars[i].style.width = pct + '%';
+          nums[i].textContent = String(pct);
+        }
+      }
+
+      function randomize() {
+        const keys = Object.keys(moods);
+        ui.mood.value = keys[Math.floor(Math.random() * keys.length)];
+        ui.intensity.value = Math.floor(rand(45, 100));
+        ui.sensitivity.value = Math.floor(rand(65, 135));
+        ui.bpm.value = Math.floor(rand(150, 190));
+        ui.faceScale.value = Math.floor(rand(82, 122));
+        updateLabels();
+        burstParticles(50, 1);
+        thumpRipple(1);
+        status('Randomized.', moods[state.mood].label + ' mode.');
+      }
+
+      function savePng() {
+        const link = document.createElement('a');
+        link.download = 'smiley-acid-dnb.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }
+
+      async function toggleFullscreen() {
+        try {
+          if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+          else await document.exitFullscreen();
+        } catch (err) {
+          status('Fullscreen unavailable.', err.message);
+        }
+      }
+
+      function setUiHidden(hidden) {
+        state.uiHidden = Boolean(hidden);
+        document.body.classList.toggle('hide-ui', state.uiHidden);
+        ui.hideUi.textContent = state.uiHidden ? 'Show UI' : 'Hide UI';
+      }
+
+      function toggleUi() {
+        setUiHidden(!state.uiHidden);
+      }
+
+      function revealUi() {
+        if (state.uiHidden) setUiHidden(false);
+      }
+
+      function onPointerMove(e) {
+        state.mouseX = e.clientX;
+        state.mouseY = e.clientY;
+        state.mouseActive = true;
+        if (state.uiHidden) revealUi();
+      }
+
+      function onPointerLeave() { state.mouseActive = false; }
+
+      function wire() {
+        window.addEventListener('resize', resize);
+        window.addEventListener('pointermove', onPointerMove, { passive: true });
+        window.addEventListener('pointerdown', revealUi, { passive: true });
+        window.addEventListener('touchstart', revealUi, { passive: true });
+        window.addEventListener('pointerleave', onPointerLeave);
+
+        ['intensity', 'sensitivity', 'bpm', 'faceScale', 'mood', 'streamUrl'].forEach(id => {
+          ui[id].addEventListener('input', updateLabels);
+          ui[id].addEventListener('change', updateLabels);
+        });
+
+        ui.playDnb.addEventListener('click', startBuiltInDnb);
+        ui.stopAudio.addEventListener('click', () => stopAllAudio(true));
+        ui.playStream.addEventListener('click', playStream);
+        ui.fileInput.addEventListener('change', e => loadFile(e.target.files && e.target.files[0]));
+        ui.micBtn.addEventListener('click', useMic);
+        ui.fakeBeatBtn.addEventListener('click', visualPulseOnly);
+        ui.randomize.addEventListener('click', randomize);
+        ui.fullscreen.addEventListener('click', toggleFullscreen);
+        ui.savePng.addEventListener('click', savePng);
+        ui.hideUi.addEventListener('click', toggleUi);
+        ui.revealUi.addEventListener('click', revealUi);
+
+        window.addEventListener('keydown', e => {
+          const key = e.key.toLowerCase();
+
+          // Escape or H must recover the controls even when a hidden input/button still has focus.
+          if (state.uiHidden && (e.key === 'Escape' || key === 'h' || key === 'u')) {
+            e.preventDefault();
+            revealUi();
+            return;
+          }
+
+          const tag = document.activeElement && document.activeElement.tagName.toLowerCase();
+          if (['input', 'select', 'textarea'].includes(tag)) return;
+          if (e.code === 'Space') {
+            e.preventDefault();
+            if (schedulerId || ['live stream', 'local file', 'microphone'].includes(state.mode)) stopAllAudio(true);
+            else startBuiltInDnb();
+          } else if (key === 'r') randomize();
+          else if (key === 'h') toggleUi();
+          else if (key === 'f') toggleFullscreen();
+          else if (key === 's') savePng();
+          else if (e.key === 'Escape') revealUi();
+        }, true);
+
+        audioEl.addEventListener('error', () => {
+          state.fallbackPulse = true;
+          status('Audio element error.', 'The file could not be decoded or loaded. Built-in DnB still works.');
+        });
+
+        streamEl.addEventListener('error', () => {
+          state.fallbackPulse = true;
+          status('Stream error.', 'The station URL could not be loaded by this browser. Built-in DnB, local files, and mic mode still work.');
+        });
+      }
+
+      wire();
+      resize();
+      loadSettings();
+      visualPulseOnly();
+      requestAnimationFrame(draw);
+    })();
+  </script>
+</body>
 </html>
